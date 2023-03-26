@@ -1,13 +1,16 @@
-package com.vlazma.Authentications;
+package com.vlazma.Dto.Users;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class AuthenticationRequest {
+public class UsersResponse {
+    private int id;
     private String email;
     private String password;
+    private int roleId;
 }
