@@ -44,6 +44,7 @@ public class UsersService {
         Users user = Users.builder()
                 .email(usersRequest.getEmail())
                 .password(usersRequest.getPassword())
+                .active(1)
                 .role(rolesRepository.findById(Integer.parseInt(usersRequest.getRoleId())).get())
                 .build();
         responseData.setPayload(usersRepository.save(user));
@@ -56,10 +57,12 @@ public class UsersService {
     }
 
     private UsersResponse mapToResponse(Users users) {
+        boolean act = users.getId()==1?true:false;
         return UsersResponse.builder()
                 .id(users.getId())
                 .email(users.getEmail())
                 .password(users.getPassword())
+                .active(act)
                 .roleId(users.getRole().getId())
                 .build();
     }
@@ -106,7 +109,8 @@ public class UsersService {
         responseData.getMessages().add("User Deleted");
         responseData.setStatus(true);
         responseData.setPayload(user.get());
-        user.get().isEnabled();
+        user.get().setActive(0);
+        usersRepository.save(user.get());
         return ResponseEntity.ok(responseData);
 
         

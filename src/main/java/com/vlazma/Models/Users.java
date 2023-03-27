@@ -32,6 +32,8 @@ public class Users implements UserDetails {
     private String email;
     @Column(length = 50)
     private String password;
+    @Column(columnDefinition = "TINYINT(1)")
+    private int active;
     @OneToOne
     @JoinColumn(name = "role_id")
     private Roles role;
@@ -70,6 +72,9 @@ public class Users implements UserDetails {
 
     @Override
     public boolean isEnabled() {
+        if(this.getActive() == 1){
         return true;
+        }
+        return false;
     }
 }

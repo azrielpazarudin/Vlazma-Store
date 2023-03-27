@@ -12,5 +12,6 @@ public class UsersResponse {
     private int id;
     private String email;
     private String password;
+    private boolean active;
     private int roleId;
 }
