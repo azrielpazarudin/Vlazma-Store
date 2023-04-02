@@ -9,11 +9,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class Product {
@@ -28,11 +30,22 @@ public class Product {
   @Column(name="description",columnDefinition = "TEXT")
   private String description;
 
-  @Column(name="price",nullable = false)
-  private Integer price;
-
   @OneToOne(fetch = FetchType.EAGER)
   @JoinColumn(name="category_id",referencedColumnName = "id")
   private Category category;
+
+  @Column(name="price",nullable = false)
+  private Integer price;
+
+  @Column(name="stock",nullable = false)
+  private Integer stock;
+
+  @Column(name="available",nullable = false,columnDefinition = "TINYINT(1)")
+  private Integer available;
+
+  @Column(name="image",nullable = false)
+  private String image;
+
+ 
 
 }
