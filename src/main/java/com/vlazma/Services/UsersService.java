@@ -1,6 +1,5 @@
 package com.vlazma.Services;
 
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +14,7 @@ import com.vlazma.Models.Users;
 import com.vlazma.Repositories.RolesRepository;
 import com.vlazma.Repositories.UsersRepository;
 
+
 import java.util.Collections;
 import lombok.var;
 
@@ -28,36 +28,58 @@ public class UsersService {
     @Autowired
     private RolesRepository rolesRepository;
 
-    public Object createUser(UsersRequest usersRequest, Errors errors) {
-        ResponseData<Users> responseData = new ResponseData<>();
-        if (errors.hasErrors()) {
+    public ResponseEntity<ResponseData<UsersResponse>> createUser(UsersRequest usersRequest, Errors errors) {
+        ResponseData<UsersResponse> responseData = new ResponseData<>();
+        var email = usersRepository.findByEmail(usersRequest.getEmail());
+        var myRole = rolesRepository.findById(0);
+        try {
+            var buffer = Integer.parseInt(usersRequest.getRoleId());
+            myRole = rolesRepository.findById(buffer);
+        } catch (NumberFormatException e) {
+        }
+        if (errors.hasErrors() || email.isPresent() || myRole.isEmpty()) {
             for (ObjectError err : errors.getAllErrors()) {
                 responseData.getMessages().add(err.getDefaultMessage());
             }
+            responseData.getMessages().add(email.isPresent() ? "Email Is Registered" : null);
+            responseData.getMessages().add(myRole.isEmpty() ? "Role Not Found" : null);
+            responseData.getMessages().removeAll(Collections.singleton(null));
             responseData.setStatus(false);
             responseData.setPayload(null);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseData);
         }
+
         responseData.getMessages().add("Success");
         responseData.setStatus(true);
-
-        Users user = Users.builder()
+        var user = Users.builder()
                 .email(usersRequest.getEmail())
                 .password(usersRequest.getPassword())
                 .active(1)
                 .role(rolesRepository.findById(Integer.parseInt(usersRequest.getRoleId())).get())
                 .build();
-        responseData.setPayload(usersRepository.save(user));
+        usersRepository.save(user);
+        responseData.setPayload(UsersResponse.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .password(user.getPassword())
+                .active(user.getActive() == 1 ? true : false)
+                .roleId(user.getRole().getId())
+                .build());
         return ResponseEntity.status(HttpStatus.CREATED).body(responseData);
     }
 
-    public List<UsersResponse> getAllUsers() {
+    public ResponseEntity<ResponseData<List<UsersResponse>>> getAllUsers() {
         List<Users> users = usersRepository.findAll();
-        return users.stream().map(this::mapToResponse).toList();
+        ResponseData<List<UsersResponse>> responseData = new ResponseData<>();
+        responseData.getMessages().add("Succes");
+        responseData.setStatus(true);
+        responseData.setPayload(users.stream().map(this::mapToResponse).toList());
+
+        return ResponseEntity.ok(responseData);
     }
 
     private UsersResponse mapToResponse(Users users) {
-        boolean act = users.getId()==1?true:false;
+        boolean act = users.getActive() == 1 ? true : false;
         return UsersResponse.builder()
                 .id(users.getId())
                 .email(users.getEmail())
@@ -67,26 +89,41 @@ public class UsersService {
                 .build();
     }
 
-    public UsersResponse findById(int id) {
-        var users = usersRepository.findById(id).get();
-
-        return UsersResponse.builder()
-                .id(users.getId())
-                .email(users.getEmail())
-                .password(users.getPassword())
-                .roleId(users.getRole().getId())
-                .build();
-
+    public ResponseEntity<ResponseData<UsersResponse>> findById(int id) {
+        var users = usersRepository.findById(id);
+        ResponseData<UsersResponse> responseData = new ResponseData<>();
+        if (users.isEmpty()) {
+            responseData.getMessages().add("User Not Found");
+            responseData.setStatus(false);
+            responseData.setPayload(null);
+            return ResponseEntity.badRequest().body(responseData);
+        }
+        responseData.getMessages().add("Succes");
+        responseData.setStatus(true);
+        responseData.setPayload(
+                UsersResponse.builder()
+                        .id(users.get().getId())
+                        .email(users.get().getEmail())
+                        .password(users.get().getPassword())
+                        .roleId(users.get().getRole().getId())
+                        .build());
+        return ResponseEntity.ok().body(responseData);
     }
 
-    public Object editUser(UsersRequest usersRequest, int id, Errors errors) {
+    public ResponseEntity<ResponseData<UsersResponse>> editUser(UsersRequest usersRequest, int id, Errors errors) {
         var updatedUser = usersRepository.findById(id);
-        ResponseData<Users> responseData = new ResponseData<>();
-        if (updatedUser.isEmpty() || errors.hasErrors()) {
+        ResponseData<UsersResponse> responseData = new ResponseData<>();
+        var email = usersRepository.findByEmail(usersRequest.getEmail());
+        if (updatedUser.isEmpty() || errors.hasErrors()
+                || (email.isPresent() && !email.get().getEmail().equals(updatedUser.get().getEmail()))) {
             for (ObjectError err : errors.getAllErrors()) {
                 responseData.getMessages().add(err.getDefaultMessage());
             }
-            responseData.getMessages().add(updatedUser.isEmpty() ? "Ekskul Tidak Ditemukan" : null);
+            responseData.getMessages().add(updatedUser.isEmpty() ? "User Not Found" : null);
+            responseData.getMessages()
+                    .add(email.isPresent() && !email.get().getEmail().equals(updatedUser.get().getEmail())
+                            ? "Email Is Registered"
+                            : null);
             responseData.getMessages().removeAll(Collections.singleton(null));
             responseData.setStatus(false);
             responseData.setPayload(null);
@@ -96,24 +133,40 @@ public class UsersService {
         responseData.setStatus(true);
         updatedUser.get().setEmail(usersRequest.getEmail());
         updatedUser.get().setPassword(usersRequest.getPassword());
-        updatedUser.get().setRole(rolesRepository.findById(Integer.parseInt(usersRequest.getRoleId())).get());
-        return ResponseEntity.status(HttpStatus.OK).body( usersRepository.save(updatedUser.get()));
+        updatedUser.get().setRole(updatedUser.get().getRole());
+        usersRepository.save(updatedUser.get());
+        responseData.setPayload(UsersResponse.builder()
+                .id(updatedUser.get().getId())
+                .email(updatedUser.get().getEmail())
+                .password(updatedUser.get().getPassword())
+                .active(true)
+                .roleId(updatedUser.get().getId()).build());
+        return ResponseEntity.status(HttpStatus.OK).body(responseData);
     }
 
-    public Object deleteUser(int id){
+    public ResponseEntity<ResponseData<UsersResponse>> deleteUser(int id) {
+        
+        System.out.println("INI ISI DARI ID : "+id);
         Optional<Users> user = usersRepository.findById(id);
-        ResponseData<Users> responseData = new ResponseData<>();
-        if(user.isEmpty()){
-            return ResponseEntity.status(HttpStatus.NOT_FOUND);
+        ResponseData<UsersResponse> responseData = new ResponseData<>();
+        if (user.isEmpty()) {
+            responseData.getMessages().add("Users Not Found");
+            responseData.setStatus(false);
+            responseData.setPayload(null);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseData);
         }
         responseData.getMessages().add("User Deleted");
         responseData.setStatus(true);
-        responseData.setPayload(user.get());
         user.get().setActive(0);
         usersRepository.save(user.get());
-        return ResponseEntity.ok(responseData);
+        responseData.setPayload(UsersResponse.builder()
+                .id(id)
+                .email(user.get().getEmail())
+                .password(user.get().getPassword())
+                .active(false)
+                .roleId(user.get().getRole().getId())
+                .build());
 
-        
-        
+        return ResponseEntity.ok(responseData);
     }
 }

@@ -1,7 +1,4 @@
-package com.vlazma.Dto.Customers;
-
-import java.time.LocalDate;
-
+package com.vlazma.Dto.Admin;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,13 +7,10 @@ import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-@NoArgsConstructor
 @AllArgsConstructor
-public class CustomersResponse {
+@NoArgsConstructor
+public class AdminResponse {
     private int id;
     private String fullName;
-    private String gender;
-    private LocalDate dateOfBirth;
-    private String phoneNumber;
     private int userId;
 }

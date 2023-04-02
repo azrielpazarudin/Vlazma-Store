@@ -18,7 +18,7 @@ public class Address {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
     @Column(length = 50)
-    private String propince;
+    private String province;
     @Column(length = 50)
     private String city;
     @Column(columnDefinition = "TEXT")
