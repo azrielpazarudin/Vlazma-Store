@@ -6,9 +6,13 @@ import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Transient;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
+@AllArgsConstructor
+@NoArgsConstructor
 @Data
 @AssociationOverrides({
     @AssociationOverride(name = "primaryKey.customers",joinColumns = @JoinColumn(name = "CUSTOMER_ID")),
@@ -32,6 +36,6 @@ public class CustomerAddress {
     }
 
     public void setAddress(Address address){
-        getPrimaryKey().getAddress();
+        getPrimaryKey().setAddress(address);
     }
 }

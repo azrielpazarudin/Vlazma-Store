@@ -1,4 +1,4 @@
-package com.vlazma.Controllers.Ekspedisi;
+package com.vlazma.Controllers;
 import java.io.IOException;
 
 import org.springframework.beans.factory.annotation.Autowired;
