@@ -3,6 +3,7 @@ package com.vlazma.Services;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
@@ -16,17 +17,23 @@ import com.vlazma.Repositories.UsersRepository;
 
 
 import java.util.Collections;
+
+import lombok.RequiredArgsConstructor;
 import lombok.var;
 
 import java.util.List;
 import java.util.Optional;
-
+import com.vlazma.Utils.PasswordEncryptor;
 @Service
+@RequiredArgsConstructor
 public class UsersService {
     @Autowired
     private UsersRepository usersRepository;
     @Autowired
     private RolesRepository rolesRepository;
+    @Autowired
+    PasswordEncryptor passwordEncryptor;
+    private final PasswordEncoder passwordEncoder;
 
     public ResponseEntity<ResponseData<UsersResponse>> createUser(UsersRequest usersRequest, Errors errors) {
         ResponseData<UsersResponse> responseData = new ResponseData<>();
@@ -83,7 +90,7 @@ public class UsersService {
         return UsersResponse.builder()
                 .id(users.getId())
                 .email(users.getEmail())
-                .password(users.getPassword())
+                .password(passwordEncryptor.decryption(users.getPassword()))
                 .active(act)
                 .roleId(users.getRole().getId())
                 .build();
@@ -132,7 +139,7 @@ public class UsersService {
         responseData.getMessages().add("Succes");
         responseData.setStatus(true);
         updatedUser.get().setEmail(usersRequest.getEmail());
-        updatedUser.get().setPassword(usersRequest.getPassword());
+        updatedUser.get().setPassword(passwordEncoder.encode(usersRequest.getPassword()));
         updatedUser.get().setRole(updatedUser.get().getRole());
         usersRepository.save(updatedUser.get());
         responseData.setPayload(UsersResponse.builder()
@@ -169,4 +176,6 @@ public class UsersService {
 
         return ResponseEntity.ok(responseData);
     }
+
+    
 }
