@@ -30,7 +30,7 @@ public class Users implements UserDetails {
     private int id;
     @Column(length = 254, unique = true)
     private String email;
-    @Column(length = 50)
+    @Column(length = 225)
     private String password;
     @Column(columnDefinition = "TINYINT(1)")
     private int active;
