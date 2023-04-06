@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ChartRequest {
-    @NotEmpty
+    @NotEmpty(message = "Customer Id Is Required")
     private String customerId;
     private boolean checkOut;
     @NotEmpty

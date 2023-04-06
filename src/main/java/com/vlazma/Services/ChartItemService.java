@@ -1,6 +1,5 @@
 package com.vlazma.Services;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -39,11 +38,14 @@ public class ChartItemService {
             product = productRepository.findById(Integer.parseInt(chartItemRequest.getProductId()));
         } catch (NumberFormatException e) {
         }
-        if (errors.hasErrors() || chart.isEmpty() || product.isEmpty()) {
+        if (errors.hasErrors() || chart.isEmpty() || product.isEmpty()
+                || Integer.parseInt(chartItemRequest.getQuantity()) < 1) {
             for (ObjectError err : errors.getAllErrors()) {
                 responseData.getMessages().add(err.getDefaultMessage());
             }
             responseData.getMessages().add(chart.isEmpty() ? "Chart Not Found" : null);
+            responseData.getMessages()
+                    .add(Integer.parseInt(chartItemRequest.getQuantity()) < 1 ? "Minimum quantity Is One" : null);
             responseData.getMessages().add(product.isEmpty() ? "Product Not Found" : null);
             responseData.getMessages().removeAll(Collections.singleton(null));
             responseData.setStatus(false);
@@ -55,33 +57,36 @@ public class ChartItemService {
         chartItem.setChart(chart.get());
         chartItem.setProduct(product.get());
         chartItem.setQuantity(Integer.parseInt(chartItemRequest.getQuantity()));
-
         var findChart = chartItemRepository.findAll();
-        List<ChartItem> sameChart = new ArrayList<>();
         for (var x : findChart) {
-            if (x.getChart().getId() == chartItem.getChart().getId()) {
-                sameChart.add(x);
+            if (chartItem.getChart().getId() == x.getChart().getId()
+                    && chartItem.getProduct().getId() == x.getProduct().getId()) {
+                chartItem.setQuantity(chartItem.getQuantity() + x.getQuantity());
             }
         }
-        int total = 0;
-        for (var sp : sameChart) {
-            if (sp.getProduct().getId() == chartItem.getProduct().getId()) {
-                ChartItem chartSameProduct = sp;
-                sp.setQuantity(sp.getQuantity() + chartItem.getQuantity());
-                chartItem.getProduct();
-                chartItem = chartSameProduct;
-            }
-            total += (sp.getProduct().getPrice() * sp.getQuantity());
-        }
-        if(chartItem.getQuantity()>chartItem.getProduct().getStock()){
-            responseData.getMessages().add("Only "+chartItem.getProduct().getStock()+" Left");
+        if (chartItem.getQuantity() > chartItem.getProduct().getStock()) {
+            responseData.getMessages().add("Maximum Ammount Is " + chartItem.getProduct().getStock());
+            responseData.getMessages().add("Chart id : " + chartItem.getChart().getId());
+            responseData.getMessages().add("Chart Kuantiti : " + chartItem.getQuantity());
             responseData.setStatus(false);
             responseData.setPayload(null);
-
             return ResponseEntity.badRequest().body(responseData);
+
         }
         chartItemRepository.save(chartItem);
-        chartService.updateGrandTotal(chartItem.getChart().getId(), total);
+        var myChart = chartRepository.findAll();
+        findChart = chartItemRepository.findAll();
+        int total = 0;
+        for (var x : myChart) {
+            for (var y : findChart) {
+                if (y.getChart().getId() == x.getId()) {
+                    total += y.getQuantity() * y.getProduct().getPrice();
+                    chartService.updateGrandTotal(x.getId(), total);
+                }
+            }
+            total = 0;
+        }
+
         responseData.getMessages().add("Succes");
         responseData.setStatus(true);
         responseData.setPayload(ChartItemResponse.builder()
@@ -114,4 +119,56 @@ public class ChartItemService {
                 .build();
     }
 
+    public ResponseEntity<ResponseData<ChartItemResponse>> editCurrentChartProduct(int id, int product,
+            int newQuantity) {
+        var findChart = chartItemRepository.findAll();
+        var sameChart = new ChartItem();
+        for (var x : findChart) {
+            if (x.getChart().getId() == id && x.getProduct().getId() == product) {
+                sameChart = x;
+            }
+        }
+        sameChart.setQuantity(newQuantity);
+        ResponseData<ChartItemResponse> responseData = new ResponseData<>();
+
+        if (sameChart.getQuantity() > sameChart.getProduct().getStock()) {
+            responseData.getMessages().add("Maximum Ammount Is " + sameChart.getProduct().getStock());
+            responseData.setStatus(false);
+            responseData.setPayload(null);
+            return ResponseEntity.badRequest().body(responseData);
+        } else {
+
+            chartItemRepository.save(sameChart);
+        }
+        var myChart = chartRepository.findAll();
+        findChart = chartItemRepository.findAll();
+        int total = 0;
+        for (var x : myChart) {
+            for (var y : findChart) {
+                if (y.getChart().getId() == x.getId()) {
+                    total += y.getQuantity() * y.getProduct().getPrice();
+                    chartService.updateGrandTotal(x.getId(), total);
+                }
+            }
+            total = 0;
+        }
+        if (sameChart.getQuantity() < 1) {
+            deleteProductFromChart(sameChart);
+        }
+        responseData.getMessages().add("Succes");
+        responseData.setStatus(true);
+        responseData.setPayload(ChartItemResponse.builder()
+                .chartId(sameChart.getChart().getId())
+                .productId(sameChart.getProduct().getId())
+                .productName(sameChart.getProduct().getName())
+                .productPrice(sameChart.getProduct().getPrice())
+                .quantity(sameChart.getQuantity())
+                .build());
+        return ResponseEntity.ok(responseData);
+
+    }
+
+    public void deleteProductFromChart(ChartItem chartItem) {
+        chartItemRepository.delete(chartItem);
+    }
 }

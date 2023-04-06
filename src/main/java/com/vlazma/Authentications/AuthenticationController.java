@@ -1,5 +1,6 @@
 package com.vlazma.Authentications;
 
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,4 +21,5 @@ public class AuthenticationController {
     public Object authentication(AuthenticationRequest request){
         return authenticationService.authenticate(request);
     }
+    
 }

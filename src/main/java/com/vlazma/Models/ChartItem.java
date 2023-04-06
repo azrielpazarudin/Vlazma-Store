@@ -1,6 +1,8 @@
 package com.vlazma.Models;
 
 import jakarta.persistence.Entity;
+
+
 import jakarta.persistence.*;
 import lombok.*;
 @Entity
