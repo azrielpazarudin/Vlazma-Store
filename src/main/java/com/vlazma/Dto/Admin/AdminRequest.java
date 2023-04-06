@@ -17,6 +17,7 @@ public class AdminRequest {
     @Size(min=3,max=50)
     private String fullName;
     @NotEmpty(message = "User Id Is Required")
+    @Size(min=1,max=3,message = "")
     @Pattern(regexp = "^[0-9]+$",message = "Number Format Only")
     private String userId; 
 }

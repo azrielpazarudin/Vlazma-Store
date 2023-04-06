@@ -4,11 +4,13 @@ import jakarta.persistence.Embeddable;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.NoArgsConstructor;
 import lombok.Data;
 
 @Data
 @Embeddable
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class OrderDetailId {

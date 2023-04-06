@@ -7,6 +7,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -15,8 +16,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @AssociationOverrides({
-    @AssociationOverride(name = "primaryKey.order",joinColumns = @JoinColumn(name = "chart_id")),
-    @AssociationOverride(name = "primaryKey.chart",joinColumns = @JoinColumn(name = "product_id"))
+    @AssociationOverride(name = "primaryKey.order",joinColumns = @JoinColumn(name = "order_id")),
+    @AssociationOverride(name = "primaryKey.chart",joinColumns = @JoinColumn(name = "chart_id"))
 })
 public class OrderDetail {
     @EmbeddedId
@@ -38,4 +39,7 @@ public class OrderDetail {
     public void setOrder(Orders order){
         getPrimaryKey().setOrder(order);;
     }
+
+    private int orderTotal;
+    private int shipCost;
 }

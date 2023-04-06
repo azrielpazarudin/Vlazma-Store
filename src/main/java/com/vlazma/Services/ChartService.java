@@ -14,8 +14,13 @@ import com.vlazma.Dto.ResponseData;
 import com.vlazma.Dto.Chart.ChartRequest;
 import com.vlazma.Dto.Chart.ChartResponse;
 import com.vlazma.Models.Chart;
+import com.vlazma.Models.ChartItem;
+import com.vlazma.Models.Product;
+import com.vlazma.Repositories.ChartItemRepository;
 import com.vlazma.Repositories.ChartRepository;
 import com.vlazma.Repositories.CustomersRepository;
+import com.vlazma.Repositories.ProductRepository;
+
 import java.util.List;
 
 @Service
@@ -24,6 +29,10 @@ public class ChartService {
     private ChartRepository chartRepository;
     @Autowired
     private CustomersRepository customersRepository;
+    @Autowired
+    private ProductRepository productRepository;
+    @Autowired
+    private ChartItemRepository chartItemRepository;
 
     public ResponseEntity<ResponseData<ChartResponse>> create(ChartRequest chartRequest, Errors errors) {
         ResponseData<ChartResponse> responseData = new ResponseData<>();
@@ -154,49 +163,74 @@ public class ChartService {
             responseData.setPayload(null);
             return ResponseEntity.badRequest().body(responseData);
         }
-            Chart updatedChart = chart.get();
-            updatedChart.setCheckOut(chartRequest.isCheckOut()?1:0);
-            updatedChart.setGrandTotal(Integer.parseInt(chartRequest.getGrandTotal()));
-            chartRepository.save(updatedChart);
-            responseData.getMessages().add("Succes");
-            responseData.setStatus(true);
-            responseData.setPayload(ChartResponse
-            .builder()
-            .id(id)
-            .customerId(updatedChart.getCustomer().getId())
-            .checkOut(updatedChart.getCheckOut()==1?true:false)
-            .grandTotal(id)
-            .build());
-            
-            return ResponseEntity.ok(responseData);
-        }
+        Chart updatedChart = chart.get();
+        updatedChart.setCheckOut(chartRequest.isCheckOut() ? 1 : 0);
+        updatedChart.setGrandTotal(Integer.parseInt(chartRequest.getGrandTotal()));
+        chartRepository.save(updatedChart);
+        responseData.getMessages().add("Succes");
+        responseData.setStatus(true);
+        responseData.setPayload(ChartResponse
+                .builder()
+                .id(id)
+                .customerId(updatedChart.getCustomer().getId())
+                .checkOut(updatedChart.getCheckOut() == 1 ? true : false)
+                .grandTotal(id)
+                .build());
 
-    public void updateGrandTotal(int id,int gt){
+        return ResponseEntity.ok(responseData);
+    }
+
+    public void updateGrandTotal(int id, int gt) {
         var chart = chartRepository.findById(id);
         chart.get().setGrandTotal(gt);
         chartRepository.save(chart.get());
     }
 
-    public ResponseEntity<ResponseData<ChartResponse>> checkOutChart(int id){
+    public ResponseEntity<ResponseData<ChartResponse>> checkOutChart(int id) {
         var chart = chartRepository.findById(id);
         ResponseData<ChartResponse> responseData = new ResponseData<>();
-        if(chart.isEmpty()){
+        if (chart.isEmpty()) {
             responseData.getMessages().add("Chart Not Found");
             responseData.setStatus(false);
             responseData.setPayload(null);
             return ResponseEntity.badRequest().body(responseData);
         }
-            chart.get().setCheckOut(1);
-            chartRepository.save(chart.get());
-            responseData.getMessages().add("Succes");
-            responseData.setStatus(true);
-            responseData.setPayload(ChartResponse.builder()
-            .id(id)
-            .customerId(chart.get().getCustomer().getId())
-            .checkOut(true)
-            .grandTotal(chart.get().getGrandTotal())
-            .build());
-            return ResponseEntity.ok(responseData);
+        chart.get().setCheckOut(1);
+        chartRepository.save(chart.get());
+        var chartItem = chartItemRepository.findAll();
+        List<ChartItem> findChartItem = new ArrayList<>();
+        for(var x:chartItem){
+            if(x.getChart().getId() == id){
+                findChartItem.add(x);
+            }
+        }
+        List<Product> product = productRepository.findAll();
+        List<Product> updatedProduct = new ArrayList<>();
+        int buffer = 0;
+        for (var x : product) {
+            for (var y : findChartItem) {
+                if (y.getProduct().getId() == x.getId()) {
+                    buffer = x.getStock() - y.getQuantity();
+                    x.setStock(buffer);
+                    updatedProduct.add(x);
+                }
+            }
+        }
+        for(var x:updatedProduct){
+            if(x.getStock()<1){
+                x.setAvailable(0);
+            }
+        }
+        productRepository.saveAll(updatedProduct);
+        responseData.getMessages().add("Succes");
+        responseData.setStatus(true);
+        responseData.setPayload(ChartResponse.builder()
+                .id(id)
+                .customerId(chart.get().getCustomer().getId())
+                .checkOut(true)
+                .grandTotal(chart.get().getGrandTotal())
+                .build());
+        return ResponseEntity.ok(responseData);
     }
 
 }

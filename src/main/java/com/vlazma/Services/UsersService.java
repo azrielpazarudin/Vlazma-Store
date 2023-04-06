@@ -153,7 +153,6 @@ public class UsersService {
 
     public ResponseEntity<ResponseData<UsersResponse>> deleteUser(int id) {
         
-        System.out.println("INI ISI DARI ID : "+id);
         Optional<Users> user = usersRepository.findById(id);
         ResponseData<UsersResponse> responseData = new ResponseData<>();
         if (user.isEmpty()) {
