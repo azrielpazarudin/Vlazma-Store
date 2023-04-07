@@ -12,12 +12,17 @@ import org.springframework.validation.ObjectError;
 import com.vlazma.Dto.ResponseData;
 import com.vlazma.Dto.Orders.OrdersRequest;
 import com.vlazma.Dto.Orders.OrdersResponse;
+import com.vlazma.Enumerations.OrderStatus;
 import com.vlazma.Models.Address;
 import com.vlazma.Models.OrderDetail;
 import com.vlazma.Models.Orders;
+import com.vlazma.Models.SalesDetail;
+import com.vlazma.Models.Sales;
 import com.vlazma.Repositories.CustomersAddressRepository;
 import com.vlazma.Repositories.CustomersRepository;
 import com.vlazma.Repositories.OrderRepository;
+import com.vlazma.Repositories.SalesRepository;
+import com.vlazma.Repositories.SalesDetailRepository;
 
 @Service
 
@@ -28,6 +33,10 @@ public class OrdersService {
     private CustomersRepository customersRepository;
     @Autowired
     private CustomersAddressRepository customersAddressRepository;
+    @Autowired
+    private SalesRepository salesRepository;
+    @Autowired
+    private SalesDetailRepository salesDetailRepository;
 
     public ResponseEntity<ResponseData<OrdersResponse>> create(OrdersRequest ordersRequest, Errors errors) {
         ResponseData<OrdersResponse> responseData = new ResponseData<>();
@@ -55,7 +64,10 @@ public class OrdersService {
                 .origin("23|Kota Bandung")
                 .destination(custDestination.getCity())
                 .courierName("JNE")
-                .total_price(0).build();
+                .total_price(0)
+                .orderStatus(OrderStatus.PROCESSED)
+                .build();
+
         orderRepository.save(order);
         responseData.getMessages().add("Succes");
         responseData.setStatus(true);
@@ -77,5 +89,25 @@ public class OrdersService {
         updateOrder.setTotal_price(orderDetail.getChart().getGrandTotal() + orderDetail.getShipCost());
         orderRepository.save(updateOrder);
     }
-    
+
+    public void changeStatusOrder(int id, String Status) {
+        var order = orderRepository.findById(id);
+        order.get().setOrderStatus(OrderStatus.RECIEVED);
+        orderRepository.save(order.get());
+        if (order.get().getOrderStatus().equals(OrderStatus.RECIEVED)) {
+            Sales sales = Sales
+                    .builder()
+                    .date(LocalDateTime.now())
+                    .total(0)
+                    .build();
+            salesRepository.save(sales);
+            SalesDetail salesDetail = new SalesDetail();
+            salesDetail.setOrder(order.get());
+            salesDetail.setSales(sales);
+            salesDetailRepository.save(salesDetail);
+            var updatedSales = salesRepository.findById(salesDetail.getSales().getId());
+            updatedSales.get().setTotal(salesDetail.getOrders().getTotal_price());
+            salesRepository.save(updatedSales.get());
+        }
+    }
 }
