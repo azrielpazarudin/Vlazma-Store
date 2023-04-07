@@ -1,49 +1,91 @@
 package com.vlazma.Authentications;
 
-
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.validation.Errors;
+import org.springframework.validation.ObjectError;
 
 import com.vlazma.Configurations.JwtService;
+import com.vlazma.Dto.ResponseData;
 import com.vlazma.Enumerations.Role;
 import com.vlazma.Models.Users;
 import com.vlazma.Repositories.RolesRepository;
 import com.vlazma.Repositories.UsersRepository;
-import com.vlazma.Utils.PasswordEncryptor;
 import lombok.RequiredArgsConstructor;
+import java.util.Collections;
+
 @Service
 @RequiredArgsConstructor
 public class AuthenticationService {
     private final UsersRepository userRepository;
     private final RolesRepository rolesRepository;
-    @Autowired
-    private PasswordEncryptor passwordEncryptor;
+    private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
 
-    public AuthenticationResponse register(RegisterRequest request) {
-        
+    public ResponseEntity<ResponseData<AuthenticationResponse>> register(RegisterRequest request, Errors errors) {
+        ResponseData<AuthenticationResponse> responseData = new ResponseData<>();
+        var userFind = userRepository.findByEmail(request.getEmail());
+        if (errors.hasErrors() || userFind.isPresent()
+                || !(request.getRole().equals("ADMIN") || request.getRole().equals("CUSTOMER"))) {
+            for (ObjectError err : errors.getAllErrors()) {
+                responseData.getMessages().add(err.getDefaultMessage());
+            }
+            responseData.getMessages().add(userFind.isPresent() ? "Email Already Registered" : null);
+            responseData.getMessages()
+                    .add(!(request.getRole().equals("ADMIN") || request.getRole().equals("CUSTOMER"))
+                            ? "Role Must Be Admin Or Customer"
+                            : null);
+            responseData.getMessages().removeAll(Collections.singleton(null));
+            responseData.setStatus(false);
+            responseData.setPayload(null);
+            return ResponseEntity.badRequest().body(responseData);
+        }
+        Role myRole = Role.valueOf(request.getRole());
         var user = Users
                 .builder()
                 .email(request.getEmail())
-                .password(passwordEncryptor.encryption(request.getPassword()))
+                .password(passwordEncoder.encode(request.getPassword()))
                 .active(1)
-                .role(rolesRepository.findByRoleName(Role.valueOf(request.getRole())).get())
+                .role(rolesRepository.findByRoleName(myRole).get())
                 .build();
         userRepository.save(user);
         var jwtToken = jwtService.generateToken(user);
-        return AuthenticationResponse.builder().token(jwtToken).build();
+        responseData.getMessages().add("Succes");
+        responseData.setStatus(true);
+        responseData.setPayload(AuthenticationResponse.builder().token(jwtToken).build());
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseData);
     }
 
-    public AuthenticationResponse authenticate(AuthenticationRequest request) {
-        authenticationManager
-                .authenticate(new UsernamePasswordAuthenticationToken((request.getEmail()), request.getPassword()));
+    public ResponseEntity<ResponseData<AuthenticationResponse>> authenticate(AuthenticationRequest request) {
+        ResponseData<AuthenticationResponse> responseData = new ResponseData<>();
+        try {
+            authenticationManager
+                    .authenticate(new UsernamePasswordAuthenticationToken((request.getEmail()), request.getPassword()));
+        } catch (AuthenticationException e) {
+            responseData.getMessages().add("Username Or Password Is Incorrect");
+            return ResponseEntity.badRequest().body(responseData);
+        }
+        try {
+            authenticationManager
+                    .authenticate(new UsernamePasswordAuthenticationToken((request.getEmail()), request.getPassword()));
+        } catch (DisabledException exception) {
+            responseData.getMessages().add("User Is Deactivated");
+            return ResponseEntity.badRequest().body(responseData);
+        }
         var user = userRepository.findByEmail(request.getEmail()).orElseThrow();
-        return AuthenticationResponse.builder()
-                .token(jwtService.generateToken(user)).build();
+        responseData.getMessages().add("Succes");
+        responseData.setStatus(true);
+        responseData.setPayload(AuthenticationResponse.builder()
+        .token(jwtService.generateToken(user)).build());
+
+        return ResponseEntity.ok(responseData);
     }
 
-    
 }

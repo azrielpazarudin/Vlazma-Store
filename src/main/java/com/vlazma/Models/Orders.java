@@ -2,7 +2,11 @@ package com.vlazma.Models;
 
 import java.time.LocalDateTime;
 
+import com.vlazma.Enumerations.OrderStatus;
+
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -30,4 +34,6 @@ public class Orders {
     private String destination;
     private String courierName;
     private int total_price;
+    @Enumerated(EnumType.STRING)
+    private OrderStatus orderStatus;
 }

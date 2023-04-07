@@ -21,7 +21,8 @@ public class SwaggerConfiguration {
         return new OpenAPI()
                 .servers(List.of(localServer))
                 .components(new Components().addSecuritySchemes("bearer-key",
-                        new SecurityScheme().type(SecurityScheme.Type.HTTP).scheme("bearer").bearerFormat("JWT")))
+                        new SecurityScheme().type(SecurityScheme.Type.HTTP)
+                        .scheme("bearer").bearerFormat("JWT")))
                 .info(new Info().title("Vlazma API Documentation")
                         .description("")
                         .version("v0.0.1")
