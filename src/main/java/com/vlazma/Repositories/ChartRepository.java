@@ -6,4 +6,5 @@ import com.vlazma.Models.Chart;
 import java.util.List;
 public interface ChartRepository extends JpaRepository<Chart,Integer>{
     List<Chart> findByCustomerId(int id);
+    List<Chart> findByCustomerIdAndCheckOut(int id,int checkOut);
 }

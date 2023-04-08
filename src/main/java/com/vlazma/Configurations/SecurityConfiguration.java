@@ -17,7 +17,7 @@ public class SecurityConfiguration {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final AuthenticationProvider authenticationProvider;
     private static final String[] AUTH_WHITELIST = {
-            "/vlazma/auth/**",
+            "/vlazma/**",
             "/vlazma/role/**",
             // -- Swagger UI v3
             "/v3/api-docs/**",

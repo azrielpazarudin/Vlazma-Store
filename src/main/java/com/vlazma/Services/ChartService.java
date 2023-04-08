@@ -1,5 +1,6 @@
 package com.vlazma.Services;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -33,6 +34,8 @@ public class ChartService {
     private ProductRepository productRepository;
     @Autowired
     private ChartItemRepository chartItemRepository;
+    @Autowired
+    private OrdersService ordersService;
 
     public ResponseEntity<ResponseData<ChartResponse>> create(ChartRequest chartRequest, Errors errors) {
         ResponseData<ChartResponse> responseData = new ResponseData<>();
@@ -45,6 +48,7 @@ public class ChartService {
             for (ObjectError err : errors.getAllErrors()) {
                 responseData.getMessages().add(err.getDefaultMessage());
             }
+            
             responseData.getMessages().add(customer.isEmpty() ? "Customer Not Found" : null);
             responseData.getMessages().removeAll(Collections.singleton(null));
             responseData.setStatus(false);
@@ -118,12 +122,7 @@ public class ChartService {
             responseData.setPayload(null);
             return ResponseEntity.badRequest().body(responseData);
         }
-        List<Chart> current = new ArrayList<>();
-        for (Chart ch : charts) {
-            if (ch.getCheckOut() == 0) {
-                current.add(ch);
-            }
-        }
+        List<Chart> current = chartRepository.findByCustomerIdAndCheckOut(id,0);
         responseData.getMessages().add("Succes");
         responseData.setStatus(true);
         responseData.setPayload(current.stream().map(this::mapToResponse).toList());
@@ -139,12 +138,8 @@ public class ChartService {
             responseData.setPayload(null);
             return ResponseEntity.badRequest().body(responseData);
         }
-        List<Chart> current = new ArrayList<>();
-        for (Chart ch : charts) {
-            if (ch.getCheckOut() == 1) {
-                current.add(ch);
-            }
-        }
+        List<Chart> current = chartRepository.findByCustomerIdAndCheckOut(id,1);
+        
         responseData.getMessages().add("Succes");
         responseData.setStatus(true);
         responseData.setPayload(current.stream().map(this::mapToResponse).toList());
@@ -186,11 +181,22 @@ public class ChartService {
         chartRepository.save(chart.get());
     }
 
-    public ResponseEntity<ResponseData<ChartResponse>> checkOutChart(int id) {
+    public ResponseEntity<ResponseData<ChartResponse>> checkOutChart(int id) throws IOException {
         var chart = chartRepository.findById(id);
         ResponseData<ChartResponse> responseData = new ResponseData<>();
         if (chart.isEmpty()) {
             responseData.getMessages().add("Chart Not Found");
+            responseData.setStatus(false);
+            responseData.setPayload(null);
+            return ResponseEntity.badRequest().body(responseData);
+        }else if(chart.get().getCheckOut()==1){
+            responseData.getMessages().add("This chart is already checkouted");
+            responseData.setStatus(false);
+            responseData.setPayload(null);
+            return ResponseEntity.badRequest().body(responseData);
+        }
+        else if(chart.get().getGrandTotal()<1){
+            responseData.getMessages().add("You haven't shopped yet");
             responseData.setStatus(false);
             responseData.setPayload(null);
             return ResponseEntity.badRequest().body(responseData);
@@ -222,6 +228,7 @@ public class ChartService {
             }
         }
         productRepository.saveAll(updatedProduct);
+        ordersService.create(chart.get().getCustomer().getId(), id);
         responseData.getMessages().add("Succes");
         responseData.setStatus(true);
         responseData.setPayload(ChartResponse.builder()

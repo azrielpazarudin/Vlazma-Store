@@ -1,7 +1,6 @@
 package com.vlazma.Controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.Errors;
@@ -16,8 +15,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.vlazma.Dto.Customers.CustomersRequest;
 import com.vlazma.Services.CustomersService;
 
-import io.swagger.v3.oas.annotations.Operation;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 @RestController
@@ -27,13 +24,7 @@ public class CustomerController {
     private CustomersService customersService;
 
     @GetMapping("/")
-    @Operation(summary = "Retrieve all Customer Data", security = {
-            @SecurityRequirement(name = "bearer-key") })
-    public Object get(HttpServletRequest request) {
-
-        if (request.isUserInRole("ROLE_ADMIN")) {
-            return customersService.getAllCustomers();
-        }
+    public Object get() {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Hanya Dapat Dilakukan Admin");
     }
 
@@ -52,8 +43,8 @@ public class CustomerController {
         return customersService.editCustomers(customersRequest, id, errors);
     }
 
-    @DeleteMapping("/delete/{id}")
+    @DeleteMapping("/deactivate/{id}")
     public Object delete(@PathVariable int id) {
-        return customersService.deleteCustomer(id);
+        return customersService.deactivateCustomer(id);
     }
 }

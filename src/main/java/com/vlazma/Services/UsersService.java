@@ -23,7 +23,6 @@ import lombok.var;
 
 import java.util.List;
 import java.util.Optional;
-import com.vlazma.Utils.PasswordEncryptor;
 @Service
 @RequiredArgsConstructor
 public class UsersService {
@@ -31,8 +30,6 @@ public class UsersService {
     private UsersRepository usersRepository;
     @Autowired
     private RolesRepository rolesRepository;
-    @Autowired
-    PasswordEncryptor passwordEncryptor;
     private final PasswordEncoder passwordEncoder;
 
     public ResponseEntity<ResponseData<UsersResponse>> createUser(UsersRequest usersRequest, Errors errors) {
@@ -86,12 +83,11 @@ public class UsersService {
     }
 
     private UsersResponse mapToResponse(Users users) {
-        boolean act = users.getActive() == 1 ? true : false;
         return UsersResponse.builder()
                 .id(users.getId())
                 .email(users.getEmail())
-                .password(passwordEncryptor.decryption(users.getPassword()))
-                .active(act)
+                .password(users.getPassword())
+                .active(users.getActive()==1?true:false)
                 .roleId(users.getRole().getId())
                 .build();
     }
@@ -151,7 +147,7 @@ public class UsersService {
         return ResponseEntity.status(HttpStatus.OK).body(responseData);
     }
 
-    public ResponseEntity<ResponseData<UsersResponse>> deleteUser(int id) {
+    public ResponseEntity<ResponseData<UsersResponse>> deactivateUser(int id) {
         
         Optional<Users> user = usersRepository.findById(id);
         ResponseData<UsersResponse> responseData = new ResponseData<>();
@@ -161,7 +157,7 @@ public class UsersService {
             responseData.setPayload(null);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseData);
         }
-        responseData.getMessages().add("User Deleted");
+        responseData.getMessages().add("User Is Deactivated, Now This Account No Longer Able To Login, But Still Stored");
         responseData.setStatus(true);
         user.get().setActive(0);
         usersRepository.save(user.get());

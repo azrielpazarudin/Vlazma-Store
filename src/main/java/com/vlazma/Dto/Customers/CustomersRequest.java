@@ -24,9 +24,11 @@ public class CustomersRequest {
     private String dateOfBirth;
     @NotEmpty(message = "Phone Number Is Required")
     @Pattern(regexp = "^[0-9]+$",message = "Number Format Only")
+    @Size(max=14)
     private String phoneNumber;
     @NotEmpty(message = "User Id Is Required")
     @Pattern(regexp = "^[0-9]+$",message = "Number Format Only")
+    @Size(min=1,max=4)
     private String userId;
 
 
