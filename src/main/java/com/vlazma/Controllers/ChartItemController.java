@@ -28,7 +28,7 @@ public class ChartItemController {
     public Object create(@Valid@RequestBody ChartItemRequest chartItemRequest,Errors errors){
         return chartItemService.create(chartItemRequest, errors);
     }
-    @PostMapping("/{id}/{product}")
+    @PostMapping("edit-chart-item/{id}/{product}")
     public Object editCurrentCart(@PathVariable int id,@PathVariable int product,@RequestBody int newQuantity){
         return chartItemService.editCurrentChartProduct(id, product, newQuantity);
     }

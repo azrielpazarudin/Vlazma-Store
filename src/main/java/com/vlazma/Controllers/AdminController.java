@@ -25,7 +25,7 @@ public class AdminController {
         return adminService.getAllAdmin();
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/find-by-id/{id}")
     public Object getById(@PathVariable int id) {
         return adminService.findById(id);
     }
@@ -35,14 +35,14 @@ public class AdminController {
         return adminService.createAdmin(adminRequest, errors);
     }
 
-    @PostMapping("/{id}")
+    @PostMapping("/edit/{id}")
     public Object edit(@PathVariable int id, @Valid @RequestBody AdminRequest adminRequest, Errors errors) {
         return adminService.editAdmin(id, adminRequest, errors);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/deactivate/{id}")
     public Object delete(@PathVariable int id) {
-        return adminService.deleteAdmin(id);
+        return adminService.deactivateAdmin(id);
     }
 
 }

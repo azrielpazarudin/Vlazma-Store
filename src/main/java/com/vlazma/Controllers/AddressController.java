@@ -26,7 +26,7 @@ public class AddressController {
         return addressService.getAllAdress();
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/find-by-id/{id}")
     public Object findById(@PathVariable int id){
         return addressService.findAddressById(id);
     }
@@ -36,12 +36,7 @@ public class AddressController {
         return addressService.createAddress(addressRequest, errors);
     }
 
-    @PostMapping("/{id}")
-    public Object edit(@Valid@RequestBody AddressRequest addressRequest,@PathVariable int id,Errors errors){
-        return addressService.editAddress(addressRequest, id, errors);
-    }
-
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/delete/{id}")
     public Object delete(@PathVariable int id){
         
         return addressService.deleteAddress(id);

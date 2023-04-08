@@ -128,7 +128,7 @@ public class AdminService {
         return ResponseEntity.ok(responseData);
     }
 
-    public ResponseEntity<ResponseData<AdminResponse>> deleteAdmin(int id) {
+    public ResponseEntity<ResponseData<AdminResponse>> deactivateAdmin(int id) {
         Optional<Admin> admin = adminRepository.findById(id);
         ResponseData<AdminResponse> responseData = new ResponseData<>();
         if (admin.isEmpty()) {
@@ -139,7 +139,7 @@ public class AdminService {
         }
         responseData.getMessages().add("Succes");
         responseData.setStatus(true);
-        usersService.deleteUser(admin.get().getUser().getId());
+        usersService.deactivateUser(admin.get().getUser().getId());
         responseData.setPayload(AdminResponse.builder()
                 .id(id)
                 .fullName(admin.get().getFullName())

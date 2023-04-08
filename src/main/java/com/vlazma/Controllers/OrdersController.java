@@ -2,6 +2,7 @@ package com.vlazma.Controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.Errors;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -18,10 +19,19 @@ import jakarta.validation.Valid;
 public class OrdersController {
     @Autowired
     private OrdersService ordersService;
+    @GetMapping("/")
+    public Object get(){
+        return ordersService.getAllOrders();
+    }
 
-    @PostMapping("/")
-    public Object create(@Valid@RequestBody OrdersRequest ordersRequest,Errors errors){
-        return ordersService.create(ordersRequest, errors);
+    @GetMapping("/current-order/{id}")
+    private Object currentOrder(@PathVariable int id){
+        return ordersService.currentOrder(id);
+    }
+
+    @GetMapping("/history-order/{id}")
+    private Object historyOrder(@PathVariable int id){
+        return ordersService.historyOrder(id);
     }
 
     @PostMapping("change-order-status/{id}")

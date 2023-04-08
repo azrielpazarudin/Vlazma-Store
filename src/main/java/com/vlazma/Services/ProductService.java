@@ -47,7 +47,7 @@ public class ProductService {
                 .category(category.get())
                 .price(Integer.parseInt(productRequest.getPrice()))
                 .stock(Integer.parseInt(productRequest.getStock()))
-                .available(productRequest.isAvailable() ? 1 : 0)
+                .available(1)
                 .image(productRequest.getImage())
                 .build();
         productRepository.save(product);
@@ -79,7 +79,7 @@ public class ProductService {
     }
 
     public ResponseEntity<ResponseData<List<ProductResponse>>> getAllProductsByCategoryId(int id) {
-        List<Product> product = productRepository.findByCategoryId(id);
+        List<Product> product = productRepository.findByAvailableAndCategoryId(1, id);
         ResponseData<List<ProductResponse>> responseData = new ResponseData<>();
         responseData.getMessages().add("Succes");
         responseData.setStatus(true);
@@ -89,7 +89,7 @@ public class ProductService {
     }
 
     public ResponseEntity<ResponseData<List<ProductResponse>>> getAllProductsByCategoryName(String name) {
-        List<Product> product = productRepository.findByCategoryName(name);
+        List<Product> product = productRepository.findByAvailableAndCategoryName(1, name);
         ResponseData<List<ProductResponse>> responseData = new ResponseData<>();
         responseData.getMessages().add("Succes");
         responseData.setStatus(true);
@@ -99,7 +99,17 @@ public class ProductService {
     }
 
     public ResponseEntity<ResponseData<List<ProductResponse>>> getAllProductsContains(String name) {
-        List<Product> product = productRepository.findByNameContains(name);
+        List<Product> product = productRepository.findByAvailableAndNameContains(1, name);
+        ResponseData<List<ProductResponse>> responseData = new ResponseData<>();
+        responseData.getMessages().add("Succes");
+        responseData.setStatus(true);
+        responseData.setPayload(product.stream().map(this::mapToResponse).toList());
+
+        return ResponseEntity.ok(responseData);
+    }
+
+    public ResponseEntity<ResponseData<List<ProductResponse>>> getAllAvailableProduct() {
+        List<Product> product = productRepository.findByAvailable(1);
         ResponseData<List<ProductResponse>> responseData = new ResponseData<>();
         responseData.getMessages().add("Succes");
         responseData.setStatus(true);

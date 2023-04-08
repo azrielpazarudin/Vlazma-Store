@@ -39,14 +39,16 @@ public class ChartItemService {
         } catch (NumberFormatException e) {
         }
         if (errors.hasErrors() || chart.isEmpty() || product.isEmpty()
-                || Integer.parseInt(chartItemRequest.getQuantity()) < 1) {
+                || Integer.parseInt(chartItemRequest.getQuantity()) < 1||product.get().getAvailable()==0) {
             for (ObjectError err : errors.getAllErrors()) {
                 responseData.getMessages().add(err.getDefaultMessage());
             }
             responseData.getMessages().add(chart.isEmpty() ? "Chart Not Found" : null);
+            
             responseData.getMessages()
                     .add(Integer.parseInt(chartItemRequest.getQuantity()) < 1 ? "Minimum quantity Is One" : null);
             responseData.getMessages().add(product.isEmpty() ? "Product Not Found" : null);
+            responseData.getMessages().add(product.get().getAvailable()==0 ? "Produk Is Not Available" : null);
             responseData.getMessages().removeAll(Collections.singleton(null));
             responseData.setStatus(false);
             responseData.setPayload(null);

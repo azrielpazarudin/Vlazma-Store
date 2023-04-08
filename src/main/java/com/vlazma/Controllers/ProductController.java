@@ -26,6 +26,11 @@ public class ProductController {
         return productService.getAllProducts();
     }
 
+    @GetMapping("/available-product")
+    public Object getAvailable(){
+        return productService.getAllAvailableProduct();
+    }
+
     @GetMapping("/{id}")
     public Object findById(@PathVariable int id){
         return productService.findById(id);

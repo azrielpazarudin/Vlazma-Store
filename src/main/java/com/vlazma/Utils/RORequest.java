@@ -9,7 +9,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-
+import org.json.*;
 @Configuration
 public class RORequest {
     public Response provinceRequest() throws IOException {
@@ -92,6 +92,21 @@ public class RORequest {
                 .build();
         Response response = client.newCall(request).execute();
         return response;
+    }
+
+    public int countShipmentCost(ROBody roBody) throws IOException{
+        System.out.println("Origin : "+roBody.getOrigin());
+        String result = costRequest(roBody).body().string();
+        System.out.println("Ini Resultnya"+result);
+        JSONObject jsonObject = new JSONObject(result);
+        JSONArray costsArray = jsonObject.getJSONObject("rajaongkir")
+                .getJSONArray("results")
+                .getJSONObject(0)
+                .getJSONArray("costs");
+
+        int value = costsArray.getJSONObject(1).getJSONArray("cost")
+                .getJSONObject(0).getInt("value");
+        return value;
     }
 
 }

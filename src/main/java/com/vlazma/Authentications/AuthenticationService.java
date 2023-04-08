@@ -3,7 +3,6 @@ package com.vlazma.Authentications;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -40,7 +39,7 @@ public class AuthenticationService {
             responseData.getMessages().add(userFind.isPresent() ? "Email Already Registered" : null);
             responseData.getMessages()
                     .add(!(request.getRole().equals("ADMIN") || request.getRole().equals("CUSTOMER"))
-                            ? "Role Must Be Admin Or Customer"
+                            ? "Role Must Be ADMIN Or CUSTOMER"
                             : null);
             responseData.getMessages().removeAll(Collections.singleton(null));
             responseData.setStatus(false);
@@ -68,22 +67,16 @@ public class AuthenticationService {
         try {
             authenticationManager
                     .authenticate(new UsernamePasswordAuthenticationToken((request.getEmail()), request.getPassword()));
-        } catch (AuthenticationException e) {
-            responseData.getMessages().add("Username Or Password Is Incorrect");
-            return ResponseEntity.badRequest().body(responseData);
-        }
-        try {
-            authenticationManager
-                    .authenticate(new UsernamePasswordAuthenticationToken((request.getEmail()), request.getPassword()));
-        } catch (DisabledException exception) {
-            responseData.getMessages().add("User Is Deactivated");
+        } catch (AuthenticationException exception) {
+            responseData.getMessages().add("Username Or Password Is Incorrect Or Maybe User Is Deactivated");
             return ResponseEntity.badRequest().body(responseData);
         }
         var user = userRepository.findByEmail(request.getEmail()).orElseThrow();
+
         responseData.getMessages().add("Succes");
         responseData.setStatus(true);
         responseData.setPayload(AuthenticationResponse.builder()
-        .token(jwtService.generateToken(user)).build());
+                .token(jwtService.generateToken(user)).build());
 
         return ResponseEntity.ok(responseData);
     }

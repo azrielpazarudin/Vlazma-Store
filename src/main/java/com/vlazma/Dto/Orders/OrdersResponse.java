@@ -20,4 +20,5 @@ public class OrdersResponse {
     private String destination;
     private String courierName;
     private int total_price;
+    private String orderStatus;
 }

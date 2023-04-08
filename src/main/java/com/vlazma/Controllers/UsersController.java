@@ -26,7 +26,7 @@ public class UsersController {
       return  usersService.getAllUsers();
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/find-by-id/{id}")
     public Object getById(@PathVariable int id){
       return usersService.findById(id);
     }
@@ -36,14 +36,14 @@ public class UsersController {
         return usersService.createUser(usersRequest, errors);
     }
 
-    @PostMapping("/{id}")
+    @PostMapping("/edit/{id}")
     public Object edit(@Valid@RequestBody UsersRequest usersRequest,Errors errors,@PathVariable int id){
         return usersService.editUser(usersRequest, id, errors);
     }
 
-    @DeleteMapping("/{id}")
-    public Object delete(@PathVariable int id){
-        return usersService.deleteUser(id);
+    @DeleteMapping("/deactivate/{id}")
+    public Object deactivate(@PathVariable int id){
+        return usersService.deactivateUser(id);
     }
     
 }

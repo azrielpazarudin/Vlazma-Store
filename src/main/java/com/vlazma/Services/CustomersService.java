@@ -168,7 +168,7 @@ public class CustomersService {
         return ResponseEntity.status(HttpStatus.OK).body(responseData);
     }
 
-    public ResponseEntity<ResponseData<CustomersResponse>> deleteCustomer(int id) {
+    public ResponseEntity<ResponseData<CustomersResponse>> deactivateCustomer(int id) {
         var cust = customersRepository.findById(id);
         ResponseData<CustomersResponse> responseData = new ResponseData<>();
         if (cust.isEmpty()) {
@@ -179,7 +179,7 @@ public class CustomersService {
         }
         responseData.getMessages().add("Succes");
         responseData.setStatus(true);
-        usersService.deleteUser(cust.get().getUser().getId());
+        usersService.deactivateUser(cust.get().getUser().getId());
         responseData.setPayload(CustomersResponse.builder()
                 .id(id)
                 .fullName(cust.get().getFullName())
