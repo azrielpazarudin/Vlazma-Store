@@ -1,0 +1,33 @@
+.row-produk{
+    background-color: #fff;
+    margin: 0;
+    padding: 5px;
+    padding-top: 10px;
+}
+.img-keranjang{
+    width: 65px;
+}
+.label{
+    margin-left: 50px;
+    margin-top: 20px;
+    margin-bottom: 0;
+}
+
+.img-close{
+    width: 25px;
+}
+
+/* table header */
+.th-header{
+    padding-top: 20px !important;
+    padding-bottom: 20px !important;
+}
+
+
+/* responsice tb ck */
+@media only screen and (min-width:768px){
+   #table-checkout{
+        width: 40%;
+   }
+
+}
