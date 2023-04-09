@@ -9,12 +9,10 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
 
 import com.vlazma.Dto.ResponseData;
-import com.vlazma.Dto.Users.UsersRequest;
+import com.vlazma.Dto.Users.ChangePassword;
 import com.vlazma.Dto.Users.UsersResponse;
 import com.vlazma.Models.Users;
-import com.vlazma.Repositories.RolesRepository;
 import com.vlazma.Repositories.UsersRepository;
-
 
 import java.util.Collections;
 
@@ -23,54 +21,13 @@ import lombok.var;
 
 import java.util.List;
 import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class UsersService {
     @Autowired
     private UsersRepository usersRepository;
-    @Autowired
-    private RolesRepository rolesRepository;
     private final PasswordEncoder passwordEncoder;
-
-    public ResponseEntity<ResponseData<UsersResponse>> createUser(UsersRequest usersRequest, Errors errors) {
-        ResponseData<UsersResponse> responseData = new ResponseData<>();
-        var email = usersRepository.findByEmail(usersRequest.getEmail());
-        var myRole = rolesRepository.findById(0);
-        try {
-            var buffer = Integer.parseInt(usersRequest.getRoleId());
-            myRole = rolesRepository.findById(buffer);
-        } catch (NumberFormatException e) {
-        }
-        if (errors.hasErrors() || email.isPresent() || myRole.isEmpty()) {
-            for (ObjectError err : errors.getAllErrors()) {
-                responseData.getMessages().add(err.getDefaultMessage());
-            }
-            responseData.getMessages().add(email.isPresent() ? "Email Is Registered" : null);
-            responseData.getMessages().add(myRole.isEmpty() ? "Role Not Found" : null);
-            responseData.getMessages().removeAll(Collections.singleton(null));
-            responseData.setStatus(false);
-            responseData.setPayload(null);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseData);
-        }
-
-        responseData.getMessages().add("Success");
-        responseData.setStatus(true);
-        var user = Users.builder()
-                .email(usersRequest.getEmail())
-                .password(usersRequest.getPassword())
-                .active(1)
-                .role(rolesRepository.findById(Integer.parseInt(usersRequest.getRoleId())).get())
-                .build();
-        usersRepository.save(user);
-        responseData.setPayload(UsersResponse.builder()
-                .id(user.getId())
-                .email(user.getEmail())
-                .password(user.getPassword())
-                .active(user.getActive() == 1 ? true : false)
-                .roleId(user.getRole().getId())
-                .build());
-        return ResponseEntity.status(HttpStatus.CREATED).body(responseData);
-    }
 
     public ResponseEntity<ResponseData<List<UsersResponse>>> getAllUsers() {
         List<Users> users = usersRepository.findAll();
@@ -87,7 +44,7 @@ public class UsersService {
                 .id(users.getId())
                 .email(users.getEmail())
                 .password(users.getPassword())
-                .active(users.getActive()==1?true:false)
+                .active(users.getActive() == 1 ? true : false)
                 .roleId(users.getRole().getId())
                 .build();
     }
@@ -113,42 +70,38 @@ public class UsersService {
         return ResponseEntity.ok().body(responseData);
     }
 
-    public ResponseEntity<ResponseData<UsersResponse>> editUser(UsersRequest usersRequest, int id, Errors errors) {
-        var updatedUser = usersRepository.findById(id);
-        ResponseData<UsersResponse> responseData = new ResponseData<>();
-        var email = usersRepository.findByEmail(usersRequest.getEmail());
-        if (updatedUser.isEmpty() || errors.hasErrors()
-                || (email.isPresent() && !email.get().getEmail().equals(updatedUser.get().getEmail()))) {
+    public ResponseEntity<ResponseData<?>> changePassword(int userId, ChangePassword changePassword, Errors errors) {
+        var user = usersRepository.findById(userId);
+        ResponseData<Object> responseData = new ResponseData<>();
+        if (user.isEmpty() || errors.hasErrors()) {
             for (ObjectError err : errors.getAllErrors()) {
                 responseData.getMessages().add(err.getDefaultMessage());
             }
-            responseData.getMessages().add(updatedUser.isEmpty() ? "User Not Found" : null);
-            responseData.getMessages()
-                    .add(email.isPresent() && !email.get().getEmail().equals(updatedUser.get().getEmail())
-                            ? "Email Is Registered"
-                            : null);
+            responseData.getMessages().add(user.isEmpty()?"User Not Found":null);
             responseData.getMessages().removeAll(Collections.singleton(null));
             responseData.setStatus(false);
             responseData.setPayload(null);
+
             return ResponseEntity.badRequest().body(responseData);
         }
+        if(!passwordEncoder.matches(changePassword.getOldPassword(),user.get().getPassword())){
+            responseData.getMessages().add("Your Old Password Is Not Match"+user.get().getUsername()+changePassword.getOldPassword());
+            responseData.getMessages().removeAll(Collections.singleton(null));
+            responseData.setStatus(false);
+            responseData.setPayload(null);
+
+            return ResponseEntity.badRequest().body(responseData);
+        }
+        user.get().setPassword(passwordEncoder.encode(changePassword.getNewPassword()));
+        usersRepository.save(user.get());
         responseData.getMessages().add("Succes");
         responseData.setStatus(true);
-        updatedUser.get().setEmail(usersRequest.getEmail());
-        updatedUser.get().setPassword(passwordEncoder.encode(usersRequest.getPassword()));
-        updatedUser.get().setRole(updatedUser.get().getRole());
-        usersRepository.save(updatedUser.get());
-        responseData.setPayload(UsersResponse.builder()
-                .id(updatedUser.get().getId())
-                .email(updatedUser.get().getEmail())
-                .password(updatedUser.get().getPassword())
-                .active(true)
-                .roleId(updatedUser.get().getId()).build());
-        return ResponseEntity.status(HttpStatus.OK).body(responseData);
+        responseData.setPayload("Your Password Is Up To Date");
+        return ResponseEntity.ok(responseData);
     }
 
     public ResponseEntity<ResponseData<UsersResponse>> deactivateUser(int id) {
-        
+
         Optional<Users> user = usersRepository.findById(id);
         ResponseData<UsersResponse> responseData = new ResponseData<>();
         if (user.isEmpty()) {
@@ -157,7 +110,8 @@ public class UsersService {
             responseData.setPayload(null);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseData);
         }
-        responseData.getMessages().add("User Is Deactivated, Now This Account No Longer Able To Login, But Still Stored");
+        responseData.getMessages()
+                .add("User Is Deactivated, Now This Account No Longer Able To Login, But Still Stored");
         responseData.setStatus(true);
         user.get().setActive(0);
         usersRepository.save(user.get());
@@ -172,5 +126,4 @@ public class UsersService {
         return ResponseEntity.ok(responseData);
     }
 
-    
 }

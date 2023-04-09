@@ -24,7 +24,7 @@ import com.vlazma.Repositories.SalesRepository;
 import com.vlazma.Utils.ROBody;
 import com.vlazma.Utils.RORequest;
 
-import jakarta.persistence.criteria.Order;
+import jakarta.servlet.http.HttpServletRequest;
 
 import com.vlazma.Repositories.SalesDetailRepository;
 
@@ -124,8 +124,9 @@ public class OrdersService {
         return updateOrder.getTotal_price();
     }
 
-    public ResponseEntity<ResponseData<Object>> currentOrder(int customerId) {
+    public ResponseEntity<ResponseData<Object>> currentOrder(HttpServletRequest request) {
         List<Orders> orders = new ArrayList<>();
+        var customerId = customersRepository.findByUserEmail(request.getUserPrincipal().getName().toString()).get().getId(); 
         for (var x : orderRepository.findByCustomersId(customerId)) {
             for (var y : orderRepository.findByCustomersIdAndOrderStatus(customerId, OrderStatus.DELIVERED)) {
                 if (x.getOrderStatus().equals(y.getOrderStatus())) {
@@ -148,7 +149,8 @@ public class OrdersService {
 
     }
 
-    public ResponseEntity<ResponseData<Object>> historyOrder(int customerId){
+    public ResponseEntity<ResponseData<Object>> historyOrder(HttpServletRequest request){
+        var customerId = customersRepository.findByUserEmail(request.getUserPrincipal().getName().toString()).get().getId(); 
         ResponseData<Object> responseData = new ResponseData<>();
         responseData.getMessages().add("Succes");
         responseData.setStatus(true);

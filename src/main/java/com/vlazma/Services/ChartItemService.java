@@ -1,5 +1,6 @@
 package com.vlazma.Services;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -16,7 +17,10 @@ import com.vlazma.Dto.ChartItem.ChartItemResponse;
 import com.vlazma.Models.ChartItem;
 import com.vlazma.Repositories.ChartItemRepository;
 import com.vlazma.Repositories.ChartRepository;
+import com.vlazma.Repositories.CustomersRepository;
 import com.vlazma.Repositories.ProductRepository;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @Service
 public class ChartItemService {
@@ -28,6 +32,8 @@ public class ChartItemService {
     private ProductRepository productRepository;
     @Autowired
     private ChartService chartService;
+    @Autowired
+    private CustomersRepository customersRepository;
 
     public ResponseEntity<ResponseData<ChartItemResponse>> create(ChartItemRequest chartItemRequest, Errors errors) {
         var chart = chartRepository.findById(0);
@@ -68,8 +74,6 @@ public class ChartItemService {
         }
         if (chartItem.getQuantity() > chartItem.getProduct().getStock()) {
             responseData.getMessages().add("Maximum Ammount Is " + chartItem.getProduct().getStock());
-            responseData.getMessages().add("Chart id : " + chartItem.getChart().getId());
-            responseData.getMessages().add("Chart Kuantiti : " + chartItem.getQuantity());
             responseData.setStatus(false);
             responseData.setPayload(null);
             return ResponseEntity.badRequest().body(responseData);
@@ -170,6 +174,22 @@ public class ChartItemService {
 
     }
 
+    public ResponseEntity<ResponseData<List<ChartItemResponse>>> currentChartItem(HttpServletRequest request){
+        var customers = customersRepository.findByUserEmail(request.getUserPrincipal().getName().toString()).orElseThrow();
+        List<ChartItem> chartItems = chartItemRepository.findAll();
+        List<ChartItem> current = new ArrayList<>();
+        for(var x:chartItems){
+            if(x.getChart().getCustomer().getId()==customers.getId()&&x.getChart().getCheckOut()!=0){
+                current.add(x);
+            }
+        }
+        ResponseData<List<ChartItemResponse>> responseData = new ResponseData<>();
+        responseData.getMessages().add("Succes");
+        responseData.setStatus(true);
+        responseData.setPayload(current.stream().map(this::mapToResponse).toList());
+        return ResponseEntity.ok(responseData);
+    }
+    
     public void deleteProductFromChart(ChartItem chartItem) {
         chartItemRepository.delete(chartItem);
     }

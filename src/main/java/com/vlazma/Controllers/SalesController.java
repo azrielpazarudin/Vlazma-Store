@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.vlazma.Repositories.SalesRepository;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
@@ -16,6 +18,8 @@ import jakarta.servlet.http.HttpServletRequest;
 public class SalesController {
     @Autowired
     private SalesRepository salesRepository;
+    @Operation(summary = "Showing Data From Sales", security = {
+        @SecurityRequirement(name = "bearer-key") })
     @GetMapping("/")
     public Object showSales(HttpServletRequest request){
         if(request.isUserInRole("ROLE_ADMIN")){
