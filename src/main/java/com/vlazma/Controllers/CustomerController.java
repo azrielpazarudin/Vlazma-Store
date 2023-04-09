@@ -26,37 +26,55 @@ import jakarta.validation.Valid;
 public class CustomerController {
     @Autowired
     private CustomersService customersService;
-    
-    @Operation(
-            summary = "Show Customer Data",
-            security = { @SecurityRequirement(name = "bearer-key") }
-    )
+
+    @Operation(summary = "Show Customer Data", security = { @SecurityRequirement(name = "bearer-key") })
     @GetMapping("/")
     public Object get(HttpServletRequest request) {
-        if(request.isUserInRole("ROLE_ADMIN")){
+        if (request.isUserInRole("ROLE_ADMIN")) {
             customersService.getAllCustomers();
         }
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Hanya Dapat Dilakukan Admin");
     }
 
+    @Operation(summary = "Show Customer Data", security = { @SecurityRequirement(name = "bearer-key") })
     @GetMapping("/find-by-id/{id}")
-    public Object getById(@PathVariable int id) {
+    public Object getById(HttpServletRequest request,@PathVariable int id) {
+        if(request.isUserInRole("ROLE_ADMIN")){
         return customersService.findById(id);
+        }
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only Admin Can Acces It");
+
     }
 
+    @Operation(summary = "Create Customer Data", security = { @SecurityRequirement(name = "bearer-key") })
     @PostMapping("/create/")
-    public Object create(@Valid @RequestBody CustomersRequest customersRequest, Errors errors) {
-        return customersService.createCustomers(customersRequest, errors);
+    public Object create(HttpServletRequest request, @Valid @RequestBody CustomersRequest customersRequest,
+            Errors errors) {
+        if (request.isUserInRole("ROLE_CUSTOMER")) {
+            return customersService.createCustomers(customersRequest, errors);
+        }
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only Customer Can Acces It");
     }
 
+    @Operation(summary = "Edit Customer Data", security = { @SecurityRequirement(name = "bearer-key") })
     @PostMapping("/edit/{id}")
-    public Object edit(@PathVariable int id, @Valid @RequestBody CustomersRequest customersRequest, Errors errors) {
-        return customersService.editCustomers(customersRequest, id, errors);
+    public Object edit(HttpServletRequest request, @PathVariable int id,
+            @Valid @RequestBody CustomersRequest customersRequest, Errors errors) {
+        if (request.isUserInRole("ROLE_CUSTOMER")) {
+            return customersService.editCustomers(customersRequest, id, errors);
+
+        }
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only Customer Can Acces It");
     }
 
+    @Operation(summary = "Edit Customer Data", security = { @SecurityRequirement(name = "bearer-key") })
     @PostMapping("/change-password/{id}")
-    public Object changePassword(@PathVariable int id,@Valid@RequestBody ChangePassword changePassword,Errors errors){
+    public Object changePassword(HttpServletRequest request,@PathVariable int id, @Valid @RequestBody ChangePassword changePassword,
+            Errors errors) {
+        if(request.isUserInRole("ROLE_CUSTOMER")){
         return customersService.changePassword(id, changePassword, errors);
+        }
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only Customer Can Acces It");
     }
 
     @DeleteMapping("/deactivate/{id}")

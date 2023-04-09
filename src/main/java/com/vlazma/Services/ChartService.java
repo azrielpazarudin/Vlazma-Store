@@ -2,7 +2,6 @@ package com.vlazma.Services;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -125,7 +124,7 @@ public class ChartService {
             responseData.setPayload(null);
             return ResponseEntity.badRequest().body(responseData);
         }
-        List<Chart> current = chartRepository.findByCustomerIdAndCheckOut(customersRepository.findByUserEmail(request.getUserPrincipal().getName().toString()).get().getId(),0);        
+        List<Chart> current = chartRepository.findByCustomerIdAndCheckOut(customersRepository.findByUserEmail(request.getUserPrincipal().getName().toString()).get().getId(),1);        
         responseData.getMessages().add("Succes");
         responseData.setStatus(true);
         responseData.setPayload(current.stream().map(this::mapToResponse).toList());

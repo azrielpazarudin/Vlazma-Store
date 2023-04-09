@@ -29,7 +29,7 @@ public class ChartController {
     }
 
     @Operation(summary = "Get Customer Current Chart Data", security = { @SecurityRequirement(name = "bearer-key") })
-    @GetMapping("/current-chart/{id}")
+    @GetMapping("/current-chart")
     public Object currentChart(HttpServletRequest request, @PathVariable int id) {
         if (request.isUserInRole("ROLE_CUSTOMER")) {
             return chartService.currentChart(request);
@@ -38,7 +38,7 @@ public class ChartController {
     }
 
     @Operation(summary = "Get Customer History Chart Data", security = { @SecurityRequirement(name = "bearer-key") })
-    @GetMapping("/history-chart/{id}")
+    @GetMapping("/history-chart")
     public Object historyChart(HttpServletRequest request, @PathVariable int id) {
         if (request.isUserInRole("ROLE_CUSTOMER")) {
             return chartService.historyChart(request);

@@ -35,7 +35,7 @@ public class OrdersController {
             @SecurityRequirement(name = "bearer-key") })
     @GetMapping("/current-order")
     private Object currentOrder(HttpServletRequest request) {
-        if (request.isUserInRole("ROLE_CUSOMER")) {
+        if (request.isUserInRole("ROLE_CUSTOMER")) {
             return ordersService.currentOrder(request);
         }
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only Customer Can Acces It");
@@ -45,19 +45,20 @@ public class OrdersController {
             @SecurityRequirement(name = "bearer-key") })
     @GetMapping("/history-order")
     private Object historyOrder(HttpServletRequest request) {
-        if (request.isUserInRole("ROLE_CUSOMER")) {
+        if (request.isUserInRole("ROLE_CUSTOMER")) {
             return ordersService.historyOrder(request);
         }
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only Customer Can Acces It");
 
     }
 
-    @Operation(summary = "Showing Customer History Order Data", security = {
+    @Operation(summary = "Change Order Data", security = {
             @SecurityRequirement(name = "bearer-key") })
-    @PostMapping("change-order-status/{id}")
+    @PostMapping("/change-order-status/{id}")
     public Object cOS(HttpServletRequest request, @PathVariable int id, @RequestBody String status) {
         if (request.isUserInRole("ROLE_ADMIN")) {
             ordersService.changeStatusOrder(id, status);
+            return ResponseEntity.ok("Status Order Changed");
         }
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only Admin Can Acces It");
     }
