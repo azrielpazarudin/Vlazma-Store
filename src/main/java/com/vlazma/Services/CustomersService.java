@@ -10,6 +10,7 @@ import org.springframework.validation.ObjectError;
 import com.vlazma.Dto.ResponseData;
 import com.vlazma.Dto.Customers.CustomersRequest;
 import com.vlazma.Dto.Customers.CustomersResponse;
+import com.vlazma.Dto.Users.ChangePassword;
 import com.vlazma.Enumerations.Gender;
 import com.vlazma.Models.Customers;
 import com.vlazma.Repositories.CustomersRepository;
@@ -168,26 +169,27 @@ public class CustomersService {
         return ResponseEntity.status(HttpStatus.OK).body(responseData);
     }
 
-    public ResponseEntity<ResponseData<CustomersResponse>> deactivateCustomer(int id) {
-        var cust = customersRepository.findById(id);
+    public Object changePassword(int id,ChangePassword changePassword,Errors errors){
+        var userId = customersRepository.findById(id);
         ResponseData<CustomersResponse> responseData = new ResponseData<>();
+        if(userId.isEmpty()){
+            responseData.getMessages().add("Customer Not Found");
+            responseData.setStatus(false);
+            responseData.setPayload(null);
+            return ResponseEntity.badRequest().body(responseData);
+        }
+        return usersService.changePassword(userId.get().getUser().getId(), changePassword, errors);
+    }
+
+    public Object deactivateCustomer(int id) {
+        var cust = customersRepository.findById(id);
+        ResponseData<Object> responseData = new ResponseData<>();
         if (cust.isEmpty()) {
             responseData.getMessages().add("Customer Is Not Found");
             responseData.setStatus(false);
             responseData.setPayload(null);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseData);
-        }
-        responseData.getMessages().add("Succes");
-        responseData.setStatus(true);
-        usersService.deactivateUser(cust.get().getUser().getId());
-        responseData.setPayload(CustomersResponse.builder()
-                .id(id)
-                .fullName(cust.get().getFullName())
-                .gender(cust.get().getGender().name())
-                .dateOfBirth(cust.get().getDateOfBirth())
-                .phoneNumber(cust.get().getPhoneNumber())
-                .userId(cust.get().getUser().getId())
-                .build());
-        return ResponseEntity.ok().body(responseData);
+        } 
+        return ResponseEntity.ok().body(usersService.deactivateUser(cust.get().getUser().getId()));
     }
 }

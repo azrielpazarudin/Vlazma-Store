@@ -22,6 +22,8 @@ import com.vlazma.Repositories.ChartRepository;
 import com.vlazma.Repositories.CustomersRepository;
 import com.vlazma.Repositories.ProductRepository;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 import java.util.List;
 
 @Service
@@ -37,24 +39,9 @@ public class ChartService {
     @Autowired
     private OrdersService ordersService;
 
-    public ResponseEntity<ResponseData<ChartResponse>> create(ChartRequest chartRequest, Errors errors) {
+    public ResponseEntity<ResponseData<ChartResponse>> create(HttpServletRequest request) {
         ResponseData<ChartResponse> responseData = new ResponseData<>();
-        var customer = customersRepository.findById(0);
-        try {
-            customer = customersRepository.findById(Integer.parseInt(chartRequest.getCustomerId()));
-        } catch (NumberFormatException e) {
-        }
-        if (errors.hasErrors() || customer.isEmpty()) {
-            for (ObjectError err : errors.getAllErrors()) {
-                responseData.getMessages().add(err.getDefaultMessage());
-            }
-            
-            responseData.getMessages().add(customer.isEmpty() ? "Customer Not Found" : null);
-            responseData.getMessages().removeAll(Collections.singleton(null));
-            responseData.setStatus(false);
-            responseData.setPayload(null);
-            return ResponseEntity.badRequest().body(responseData);
-        }
+        var customer = customersRepository.findByUserEmail(request.getUserPrincipal().getName().toString());
         var chart = Chart.builder()
                 .customer(customer.get())
                 .checkOut(0)
@@ -113,8 +100,8 @@ public class ChartService {
         return ResponseEntity.ok(responseData);
     }
 
-    public ResponseEntity<ResponseData<List<ChartResponse>>> currentChart(int id) {
-        List<Chart> charts = chartRepository.findByCustomerId(id);
+    public ResponseEntity<ResponseData<List<ChartResponse>>> currentChart(HttpServletRequest request) {
+        List<Chart> charts = chartRepository.findByCustomerId(customersRepository.findByUserEmail(request.getUserPrincipal().getName().toString()).get().getId());
         ResponseData<List<ChartResponse>> responseData = new ResponseData<>();
         if (charts.isEmpty()) {
             responseData.getMessages().add("Customer Not Found");
@@ -122,15 +109,15 @@ public class ChartService {
             responseData.setPayload(null);
             return ResponseEntity.badRequest().body(responseData);
         }
-        List<Chart> current = chartRepository.findByCustomerIdAndCheckOut(id,0);
+        List<Chart> current = chartRepository.findByCustomerIdAndCheckOut(customersRepository.findByUserEmail(request.getUserPrincipal().getName().toString()).get().getId(),0);
         responseData.getMessages().add("Succes");
         responseData.setStatus(true);
         responseData.setPayload(current.stream().map(this::mapToResponse).toList());
         return ResponseEntity.ok(responseData);
     }
 
-    public ResponseEntity<ResponseData<List<ChartResponse>>> historyChart(int id) {
-        List<Chart> charts = chartRepository.findByCustomerId(id);
+    public ResponseEntity<ResponseData<List<ChartResponse>>> historyChart(HttpServletRequest request) {
+        List<Chart> charts = chartRepository.findByCustomerId(customersRepository.findByUserEmail(request.getUserPrincipal().getName().toString()).get().getId());
         ResponseData<List<ChartResponse>> responseData = new ResponseData<>();
         if (charts.isEmpty()) {
             responseData.getMessages().add("Customer Not Found");
@@ -138,8 +125,7 @@ public class ChartService {
             responseData.setPayload(null);
             return ResponseEntity.badRequest().body(responseData);
         }
-        List<Chart> current = chartRepository.findByCustomerIdAndCheckOut(id,1);
-        
+        List<Chart> current = chartRepository.findByCustomerIdAndCheckOut(customersRepository.findByUserEmail(request.getUserPrincipal().getName().toString()).get().getId(),0);        
         responseData.getMessages().add("Succes");
         responseData.setStatus(true);
         responseData.setPayload(current.stream().map(this::mapToResponse).toList());

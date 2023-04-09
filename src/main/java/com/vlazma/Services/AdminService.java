@@ -14,10 +14,13 @@ import org.springframework.validation.ObjectError;
 import com.vlazma.Dto.ResponseData;
 import com.vlazma.Dto.Admin.AdminRequest;
 import com.vlazma.Dto.Admin.AdminResponse;
+import com.vlazma.Dto.Users.ChangePassword;
 import com.vlazma.Models.Admin;
 import com.vlazma.Models.Users;
 import com.vlazma.Repositories.AdminRepository;
 import com.vlazma.Repositories.UsersRepository;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @Service
 public class AdminService {
@@ -28,13 +31,13 @@ public class AdminService {
     @Autowired
     private UsersService usersService;
 
-    public ResponseEntity<ResponseData<AdminResponse>> createAdmin(AdminRequest adminRequest, Errors errors) {
+    public ResponseEntity<ResponseData<AdminResponse>> createAdmin(AdminRequest adminRequest,HttpServletRequest request, Errors errors) {
         ResponseData<AdminResponse> responseData = new ResponseData<>();
-        Optional<Users> users = usersRepository.findById(0);
+
+        Optional<Users> users = usersRepository.findByEmail(request.getUserPrincipal().getName().toString());
         var adUs = adminRepository.findByUserId(0);
         try {
-            users = usersRepository.findById(Integer.parseInt(adminRequest.getUserId()));
-            adUs=adminRepository.findByUserId(Integer.parseInt(adminRequest.getUserId()));
+            adUs=adminRepository.findByUserId(users.get().getId());
         } catch (NumberFormatException e) {
         }
         
@@ -103,8 +106,8 @@ public class AdminService {
         return ResponseEntity.ok(responseData);
     }
 
-    public ResponseEntity<ResponseData<AdminResponse>> editAdmin(int id, AdminRequest adminRequest, Errors errors) {
-        Optional<Admin> adm = adminRepository.findById(id);
+    public ResponseEntity<ResponseData<AdminResponse>> editAdmin(HttpServletRequest request, AdminRequest adminRequest, Errors errors) {
+        Optional<Admin> adm = adminRepository.findById(usersRepository.findByEmail(request.getUserPrincipal().getName().toString()).get().getId());
         ResponseData<AdminResponse> responseData = new ResponseData<>();
         if (adm.isEmpty() || errors.hasErrors()) {
             for (ObjectError err : errors.getAllErrors()) {
@@ -126,6 +129,18 @@ public class AdminService {
                 .fullName(adm.get().getFullName())
                 .userId(adm.get().getUser().getId()).build());
         return ResponseEntity.ok(responseData);
+    }
+
+    public Object changePassword(HttpServletRequest request,ChangePassword changePassword,Errors errors){
+        Optional<Admin> adm = adminRepository.findById(usersRepository.findByEmail(request.getUserPrincipal().getName().toString()).get().getId());
+        ResponseData<AdminResponse> responseData = new ResponseData<>();
+        if(adm.isEmpty()){
+            responseData.getMessages().add("Admin Not Found");
+            responseData.setStatus(false);
+            responseData.setPayload(null);
+            return ResponseEntity.badRequest().body(responseData);
+        }
+        return usersService.changePassword(adm.get().getUser().getId(), changePassword, errors);
     }
 
     public ResponseEntity<ResponseData<AdminResponse>> deactivateAdmin(int id) {

@@ -94,7 +94,7 @@ public class CategoryService {
                 responseData.getMessages().add(err.getDefaultMessage());
             }
             responseData.getMessages().add(updateCat.isEmpty()?"Category Not Found":null);
-            responseData.getMessages().retainAll(Collections.singleton(null));
+            responseData.getMessages().removeAll(Collections.singleton(null));
             responseData.setStatus(false);
             responseData.setPayload(null);
             return ResponseEntity.badRequest().body(responseData);
